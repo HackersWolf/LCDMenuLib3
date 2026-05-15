@@ -35,6 +35,8 @@ Typical targets include:
 
 Open the examples from the Arduino IDE or compile them with `arduino-cli`.
 
+Some examples are not complete/functioning yet — I’m still working on them 🙂
+
 - `LCDML3_000_serial_helpers`: core LCDMenuLib3 helper methods.
 - `LCDML3_010_dynamic_widgets`: time, timer, date, radio list, checklist, and state buttons.
 - `LCDML3_020_advanced_widgets`: numeric/float editors, IP, WiFi, Bluetooth, headers, themes, status bar, dialogs, PIN, progress, wizard, and settings.
@@ -52,15 +54,15 @@ Open the examples from the Arduino IDE or compile them with `arduino-cli`.
 
 ## Installation
 
-Download the library from the GitHub repository.
-Open the Arduino IDE.
-Go to Sketch > Include Library > Add .ZIP Library.
-Select the downloaded .zip file and click Open.
+- Download the library `LCDMenuLib3-main.zip` from the GitHub repository.
+- Open the Arduino IDE.
+- Go to Sketch > Include Library > Add .ZIP Library.
+- Select the downloaded `LCDMenuLib3-main.zip` file and click Open.
 
 OR
 
-Download the library from the GitHub repository and unzip .ZIP library.
-Then copy the `LCDMenuLib3` folder into your Arduino libraries directory:
+- Download the library `LCDMenuLib3-main.zip` from the GitHub repository and unzip.
+- Copy the `LCDMenuLib3` folder into your Arduino libraries directory:
 
 ```text
 Documents/Arduino/libraries/LCDMenuLib3
