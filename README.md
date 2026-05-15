@@ -52,7 +52,15 @@ Open the examples from the Arduino IDE or compile them with `arduino-cli`.
 
 ## Installation
 
-Copy the `LCDMenuLib3` folder into your Arduino libraries directory:
+Download the library from the GitHub repository.
+Open the Arduino IDE.
+Go to Sketch > Include Library > Add .ZIP Library.
+Select the downloaded .zip file and click Open.
+
+OR
+
+Download the library from the GitHub repository and unzip .ZIP library.
+Then copy the `LCDMenuLib3` folder into your Arduino libraries directory:
 
 ```text
 Documents/Arduino/libraries/LCDMenuLib3
