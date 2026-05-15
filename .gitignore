@@ -1,0 +1,10 @@
+.vscode/
+.idea/
+*.tmp
+*.bak
+*.log
+build/
+dist/
+.pio/
+.DS_Store
+Thumbs.db

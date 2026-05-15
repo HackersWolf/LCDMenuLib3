@@ -1,0 +1,532 @@
+# ##############################################################################
+#                        LCDMenuLib (LCDML)
+# ##############################################################################
+#
+# MIT License
+#
+# Copyright (c) [2025] [Nils Feldkämper]
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# ##############################################################################
+#
+# BUG / ISSUES REPORTING
+#    https://github.com/Jomelo/LCDMenuLib/issues
+#
+# ARDUINO FORUM
+#    http://forum.arduino.cc/index.php?topic=73816.0
+#
+# ##############################################################################
+
+
+#######################################
+# LCDML
+#######################################
+
+LCDMenuLib3	KEYWORD1
+LCDML3_Time	KEYWORD1
+LCDML3_Timer	KEYWORD1
+LCDML3_Date	KEYWORD1
+LCDML3_TimeEditor	KEYWORD1
+LCDML3_TimerEditor	KEYWORD1
+LCDML3_DateEditor	KEYWORD1
+LCDML3_RadioList	KEYWORD1
+LCDML3_CheckList	KEYWORD1
+LCDML3_StateButton	KEYWORD1
+LCDML3_NumericEditor	KEYWORD1
+LCDML3_FloatEditor	KEYWORD1
+LCDML3_IPAddressEditor	KEYWORD1
+LCDML3_TextEditor	KEYWORD1
+LCDML3_WiFiCredentials	KEYWORD1
+LCDML3_WiFiMenu	KEYWORD1
+LCDML3_BluetoothMenu	KEYWORD1
+LCDML3_MenuHeader	KEYWORD1
+LCDML3_Theme	KEYWORD1
+LCDML3_DebugMenu	KEYWORD1
+LCDML3_StatusBar	KEYWORD1
+LCDML3_ConfirmDialog	KEYWORD1
+LCDML3_PinEditor	KEYWORD1
+LCDML3_ProgressScreen	KEYWORD1
+LCDML3_Wizard	KEYWORD1
+LCDML3_SettingsAdapter	KEYWORD1
+LCDML3::Context	KEYWORD1
+LCDML3::RenderConfig	KEYWORD1
+LCDML3::EditStep	KEYWORD1
+LCDML3::Align	KEYWORD1
+LCDMenuLib3_menu	KEYWORD1
+
+LCDML	KEYWORD3
+LCDBL	KEYWORD3
+
+LCDML_0	KEYWORD3
+LCDBL_0	KEYWORD3
+
+
+#######################################
+# CONTROL / BUTTONS
+#######################################
+
+_LCDML_CONTROL_serial	LITERAL1
+_LCDML_CONTROL_analog	LITERAL1
+_LCDML_CONTROL_digital	LITERAL1
+_LCDML_CONTROL_encoder	LITERAL1
+_LCDML_CONTROL_keypad	LITERAL1
+_LCDML_CONTROL_ir	LITERAL1
+_LCDML_CONTROL_joystick	LITERAL1
+_LCDML_CONTROL_i2c_pcf8574	LITERAL1
+
+_LCDML_DISP_cfg_scrollbar	LITERAL1
+
+_LCDML_VERSION	LITERAL1
+
+_LCDML_NO_FUNC	LITERAL1
+_LCDML_FIRST_ELEMENT_ID	LITERAL1
+
+_LCDML_CONTROL_serial_enter	LITERAL1
+_LCDML_CONTROL_serial_up	LITERAL1
+_LCDML_CONTROL_serial_down	LITERAL1
+_LCDML_CONTROL_serial_left	LITERAL1
+_LCDML_CONTROL_serial_right	LITERAL1
+_LCDML_CONTROL_serial_quit	LITERAL1
+
+_LCDML_CONTROL_analog_pin	LITERAL1
+_LCDML_CONTROL_analog_enter_min	LITERAL1
+_LCDML_CONTROL_analog_enter_max	LITERAL1
+_LCDML_CONTROL_analog_up_min	LITERAL1
+_LCDML_CONTROL_analog_up_max	LITERAL1
+_LCDML_CONTROL_analog_down_min	LITERAL1
+_LCDML_CONTROL_analog_down_max	LITERAL1
+_LCDML_CONTROL_analog_enable_quit	LITERAL1
+_LCDML_CONTROL_analog_back_min	LITERAL1
+_LCDML_CONTROL_analog_back_max	LITERAL1
+_LCDML_CONTROL_analog_enable_lr	LITERAL1
+_LCDML_CONTROL_analog_left_min	LITERAL1
+_LCDML_CONTROL_analog_left_max	LITERAL1
+_LCDML_CONTROL_analog_right_min	LITERAL1
+_LCDML_CONTROL_analog_right_max	LITERAL1
+
+_LCDML_CONTROL_digital_low_active	LITERAL1
+_LCDML_CONTROL_digital_a	LITERAL1
+_LCDML_CONTROL_digital_enable_quit	LITERAL1
+_LCDML_CONTROL_digital_enable_lr	LITERAL1
+_LCDML_CONTROL_digital_enter	LITERAL1
+_LCDML_CONTROL_digital_up	LITERAL1
+_LCDML_CONTROL_digital_down	LITERAL1
+_LCDML_CONTROL_digital_quit	LITERAL1
+_LCDML_CONTROL_digital_left	LITERAL1
+_LCDML_CONTROL_digital_right	LITERAL1
+
+_LCDML_CONTROL_encoder_enable	LITERAL1
+_LCDML_CONTROL_encoder_pin_a	LITERAL1
+_LCDML_CONTROL_encoder_pin_b	LITERAL1
+_LCDML_CONTROL_encoder_pin_button	LITERAL1
+_LCDML_CONTROL_encoder_high_active	LITERAL1
+
+_LCDML_CONTROL_keypad_rows	LITERAL1
+_LCDML_CONTROL_keypad_cols	LITERAL1
+
+
+_LCDML_u8g_lcd_w	LITERAL1
+_LCDML_u8g_lcd_h	LITERAL1
+_LCDML_u8g_font	LITERAL1
+_LCDML_u8g_font_w	LITERAL1
+_LCDML_u8g_font_h	LITERAL1
+_LCDML_u8g_cols_max	LITERAL1
+_LCDML_u8g_rows_max	LITERAL1
+_LCDML_u8g_rows	LITERAL1
+_LCDML_u8g_cols	LITERAL1
+_LCDML_u8g_scrollbar_w	LITERAL1
+
+
+_LCDML_DISP_w	LITERAL1
+_LCDML_DISP_h	LITERAL1
+_LCDML_DISP_font	LITERAL1
+_LCDML_DISP_font_w	LITERAL1
+_LCDML_DISP_font_h	LITERAL1
+_LCDML_DISP_cursor_char	LITERAL1
+_LCDML_DISP_cur_space_before	LITERAL1
+_LCDML_DISP_cur_space_behind	LITERAL1
+_LCDML_DISP_box_x0	LITERAL1
+_LCDML_DISP_box_y0	LITERAL1
+_LCDML_DISP_box_x1	LITERAL1
+_LCDML_DISP_box_y1	LITERAL1
+_LCDML_DISP_draw_frame	LITERAL1
+_LCDML_DISP_scrollbar_w	LITERAL1
+_LCDML_DISP_cols_max	LITERAL1
+_LCDML_DISP_rows_max	LITERAL1
+
+
+_LCDML_DISP_cols	LITERAL1
+_LCDML_DISP_rows	LITERAL1
+_LCDML_DSIP_use_header	LITERAL1
+_LCDML_DISP_rs	LITERAL1
+_LCDML_DISP_e	LITERAL1
+_LCDML_DISP_rw	LITERAL1
+_LCDML_DISP_dat0	LITERAL1
+_LCDML_DISP_dat1	LITERAL1
+_LCDML_DISP_dat2	LITERAL1
+_LCDML_DISP_dat3	LITERAL1
+_LCDML_DISP_dat4	LITERAL1
+_LCDML_DISP_dat5	LITERAL1
+_LCDML_DISP_dat6	LITERAL1
+_LCDML_DISP_dat7	LITERAL1
+_LCDML_DISP_backlight	LITERAL1
+_LCDML_DISP_backlight_pol	LITERAL1
+_LCDML_DISP_addr	LITERAL1
+_LCDML_DISP_srdata	LITERAL1
+_LCDML_DISP_srclk	LITERAL1
+_LCDML_DISP_strobe	LITERAL1
+_LCDML_DISP_enable	LITERAL1
+_LCDML_DogLCD_type	LITERAL1
+_LCDML_DogLCD_SI	LITERAL1
+_LCDML_DogLCD_CLK	LITERAL1
+_LCDML_DogLCD_RS	LITERAL1
+_LCDML_DogLCD_CSB	LITERAL1
+_LCDML_DogLCD_RESET	LITERAL1
+_LCDML_DogLCD_LIGHT	LITERAL1
+
+_LCDML_DISP_cfg_control	LITERAL1
+
+_LCDML_DISP_cfg_cursor	LITERAL1
+
+_LCDML_DISP_cnt	LITERAL1
+
+_LCDML_TYPE_default	LITERAL1
+_LCDML_TYPE_dynParam	LITERAL1
+_LCDML_TYPE_dynParam_enableSubMenus	LITERAL1
+_LCDML_TYPE_dynParam_enableCustomRefresh	LITERAL1
+
+LCDML_UNUSED	LITERAL1
+
+
+#######################################
+# MENU
+#######################################
+
+getChild	KEYWORD2
+getParam	KEYWORD2
+checkCallback	KEYWORD2
+getID	KEYWORD2
+getSibling	KEYWORD2
+callback	KEYWORD2
+checkCondition	KEYWORD2
+checkType_menu	KEYWORD2
+checkType_dynParam	KEYWORD2
+checkType_dynParam_enabledSubMenu	KEYWORD2
+checkType_dynParam_enabledCustomRefresh	KEYWORD2
+
+
+#######################################
+# DISPLAY / MENU
+#######################################
+
+# class methods
+init	KEYWORD2
+loop_menu	KEYWORD2
+loop_control	KEYWORD2
+
+MENU_display	KEYWORD2
+MENU_goRoot	KEYWORD2
+MENU_goBack	KEYWORD2
+MENU_getLayer	KEYWORD2
+MENU_getCursorPos	KEYWORD2
+MENU_getChilds	KEYWORD2
+MENU_getCursorPosAbs	KEYWORD2
+MENU_getCursorObjPos	KEYWORD2
+MENU_getParentID	KEYWORD2
+MENU_enRollover	KEYWORD2
+MENU_disRollover	KEYWORD2
+MENU_getDisplayedObj	KEYWORD2
+MENU_getCurrentObj	KEYWORD2
+MENU_getRootObj	KEYWORD2
+MENU_getScroll	KEYWORD2
+MENU_enScroll	KEYWORD2
+MENU_disScroll	KEYWORD2
+MENU_enUseDynElementsWithSubElements	KEYWORD2
+MENU_disUseDynElementsWithSubElements	KEYWORD2
+MENU_getScrollDisableStatus	KEYWORD2
+MENU_setDynContent	KEYWORD2
+MENU_checkDynContent	KEYWORD2
+MENU_resetActiveMenu	KEYWORD2
+MENU_getLastActivFunctionID	KEYWORD2
+MENU_getLastCursorPositionID	KEYWORD2
+MENU_getElementIDFromCursorPos	KEYWORD2
+MENU_getCurrentElementID	KEYWORD2
+MENU_getDisplayedElementID	KEYWORD2
+MENU_getLastElementID	KEYWORD2
+MENU_getWindowRows	KEYWORD2
+MENU_setWindowRows	KEYWORD2
+MENU_isAtRoot	KEYWORD2
+MENU_hasChildren	KEYWORD2
+MENU_isFunctionActive	KEYWORD2
+MENU_setDynFunctionContentUpdate	KEYWORD2
+MENU_clearDynFunctionContentUpdate	KEYWORD2
+MENU_allCondetionRefresh	KEYWORD2
+MENU_enRefreshAllOnButtonAction	KEYWORD2
+MENU_disRefreshAllOnButtonAction	KEYWORD2
+MENU_setDynRContent	KEYWORD2
+MENU_clearDynRContent	KEYWORD2
+MENU_checkDynRContent	KEYWORD2
+
+BT_setup	KEYWORD2
+BT_press	KEYWORD2
+BT_release	KEYWORD2
+BT_releaseAll	KEYWORD2
+BT_isPressed	KEYWORD2
+BT_anyPressed	KEYWORD2
+BT_enter	KEYWORD2
+BT_up	KEYWORD2
+BT_down	KEYWORD2
+BT_left	KEYWORD2
+BT_right	KEYWORD2
+BT_quit	KEYWORD2
+
+BT_checkAll	KEYWORD2
+BT_checkAny	KEYWORD2
+BT_checkLeft	KEYWORD2
+BT_checkRight	KEYWORD2
+BT_checkUp	KEYWORD2
+BT_checkDown	KEYWORD2
+BT_checkEnter	KEYWORD2
+
+BT_resetAll	KEYWORD2
+BT_resetEnter	KEYWORD2
+BT_resetLeft	KEYWORD2
+BT_resetRight	KEYWORD2
+BT_resetUp	KEYWORD2
+BT_resetDown	KEYWORD2
+
+CE_setup	KEYWORD2
+CE_trigger	KEYWORD2
+CE_clear	KEYWORD2
+CE_clearAll	KEYWORD2
+CE_isTriggered	KEYWORD2
+CE_anyTriggered	KEYWORD2
+CE_countTriggered	KEYWORD2
+CE_set	KEYWORD2
+CE_resetAll	KEYWORD2
+CE_reset	KEYWORD2
+CE_checkAny	KEYWORD2
+CE_check	KEYWORD2
+CE_setOnChangeCbFunction	KEYWORD2
+CE_clearOnChangeCbFunction	KEYWORD2
+
+DISP_update	KEYWORD2
+DISP_menuUpdate	KEYWORD2
+DISP_clear	KEYWORD2
+DISP_checkMenuUpdate	KEYWORD2
+DISP_checkMenuCursorUpdate	KEYWORD2
+DISP_getMenuContentId	KEYWORD2
+
+FUNC_setup	KEYWORD2
+FUNC_loop	KEYWORD2
+FUNC_close	KEYWORD2
+FUNC_goBackToMenu	KEYWORD2
+FUNC_getID	KEYWORD2
+FUNC_getParam	KEYWORD2
+FUNC_getPreviousParam	KEYWORD2
+FUNC_setLoopInterval	KEYWORD2
+FUNC_disableScreensaver	KEYWORD2
+FUNC_setGBAToLastFunc	KEYWORD2
+FUNC_setGBAToLastCursorPos	KEYWORD2
+FUNC_setGBA	KEYWORD2
+FUNC_setCEMask	KEYWORD2
+
+OTHER_jumpToFunc	KEYWORD2
+OTHER_jumpToID	KEYWORD2
+OTHER_setCursorToFunc	KEYWORD2
+OTHER_setCursorToID	KEYWORD2
+OTHER_getIDFromFunction	KEYWORD2
+OTHER_updateFunc	KEYWORD2
+
+TIMER_ms	KEYWORD2
+TIMER_msReset	KEYWORD2
+TIMER_us	KEYWORD2
+TIMER_usReset	KEYWORD2
+
+SCREEN_enable	KEYWORD2
+SCREEN_disable	KEYWORD2
+SCREEN_resetTimer	KEYWORD2
+SCREEN_start	KEYWORD2
+SCREEN_isEnabled	KEYWORD2
+SCREEN_getTimeout	KEYWORD2
+SCREEN_setTimeout	KEYWORD2
+VERSION_get	KEYWORD2
+begin	KEYWORD2
+nextField	KEYWORD2
+previousField	KEYWORD2
+increment	KEYWORD2
+decrement	KEYWORD2
+setValue	KEYWORD2
+getValue	KEYWORD2
+getField	KEYWORD2
+format	KEYWORD2
+toSeconds	KEYWORD2
+fromSeconds	KEYWORD2
+isLeapYear	KEYWORD2
+daysInMonth	KEYWORD2
+up	KEYWORD2
+down	KEYWORD2
+selectCursor	KEYWORD2
+select	KEYWORD2
+getCursor	KEYWORD2
+getSelected	KEYWORD2
+getWindowStart	KEYWORD2
+getVisibleRows	KEYWORD2
+isVisible	KEYWORD2
+isSelected	KEYWORD2
+toggleCursor	KEYWORD2
+setChecked	KEYWORD2
+isChecked	KEYWORD2
+getMask	KEYWORD2
+setMask	KEYWORD2
+next	KEYWORD2
+previous	KEYWORD2
+set	KEYWORD2
+get	KEYWORD2
+isOn	KEYWORD2
+isAuto	KEYWORD2
+isOff	KEYWORD2
+label	KEYWORD2
+setBounds	KEYWORD2
+setStep	KEYWORD2
+setWrap	KEYWORD2
+getMin	KEYWORD2
+getMax	KEYWORD2
+getStep	KEYWORD2
+setPrecision	KEYWORD2
+getPrecision	KEYWORD2
+setOctet	KEYWORD2
+getOctet	KEYWORD2
+getBytes	KEYWORD2
+nextChar	KEYWORD2
+previousChar	KEYWORD2
+nextPosition	KEYWORD2
+previousPosition	KEYWORD2
+clear	KEYWORD2
+getText	KEYWORD2
+getCredentials	KEYWORD2
+setCredentials	KEYWORD2
+setState	KEYWORD2
+getState	KEYWORD2
+setSelectedNetwork	KEYWORD2
+getSelectedNetwork	KEYWORD2
+formatStatus	KEYWORD2
+nextAction	KEYWORD2
+previousAction	KEYWORD2
+setSelectedDevice	KEYWORD2
+getSelectedDevice	KEYWORD2
+setBleMode	KEYWORD2
+isBleMode	KEYWORD2
+setTitle	KEYWORD2
+setSubtitle	KEYWORD2
+setLevel	KEYWORD2
+getTitle	KEYWORD2
+getSubtitle	KEYWORD2
+getLevel	KEYWORD2
+setColors	KEYWORD2
+setSymbols	KEYWORD2
+accentColor	KEYWORD2
+warningColor	KEYWORD2
+cursorSymbol	KEYWORD2
+checkedSymbol	KEYWORD2
+uncheckedSymbol	KEYWORD2
+radioOnSymbol	KEYWORD2
+radioOffSymbol	KEYWORD2
+setPin	KEYWORD2
+getPin	KEYWORD2
+modeInput	KEYWORD2
+modeOutput	KEYWORD2
+readDigital	KEYWORD2
+readAnalog	KEYWORD2
+serialWrite	KEYWORD2
+formatPin	KEYWORD2
+setIcon	KEYWORD2
+toggleIcon	KEYWORD2
+isIconEnabled	KEYWORD2
+chooseOk	KEYWORD2
+chooseCancel	KEYWORD2
+confirm	KEYWORD2
+isOkSelected	KEYWORD2
+getResult	KEYWORD2
+isDone	KEYWORD2
+setDigit	KEYWORD2
+getDigit	KEYWORD2
+equals	KEYWORD2
+add	KEYWORD2
+setTotal	KEYWORD2
+setIndeterminate	KEYWORD2
+percent	KEYWORD2
+frame	KEYWORD2
+goTo	KEYWORD2
+markComplete	KEYWORD2
+isComplete	KEYWORD2
+isLast	KEYWORD2
+getStepCount	KEYWORD2
+getCompletedMask	KEYWORD2
+available	KEYWORD2
+readByte	KEYWORD2
+writeByte	KEYWORD2
+readBytes	KEYWORD2
+writeBytes	KEYWORD2
+readInt32	KEYWORD2
+writeInt32	KEYWORD2
+readFloat	KEYWORD2
+writeFloat	KEYWORD2
+commit	KEYWORD2
+reset	KEYWORD2
+tick	KEYWORD2
+cursor	KEYWORD2
+formatHHMM	KEYWORD2
+formatDateDDMMYY	KEYWORD2
+formatDateDDMMYYYY	KEYWORD2
+daysInMonth	KEYWORD2
+clampDate	KEYWORD2
+handleTime	KEYWORD2
+handleDate	KEYWORD2
+alignLeftX	KEYWORD2
+alignCenterX	KEYWORD2
+alignRightX	KEYWORD2
+alignedX	KEYWORD2
+textWidth	KEYWORD2
+drawAligned	KEYWORD2
+drawTime	KEYWORD2
+drawDate	KEYWORD2
+handleAndDrawTime	KEYWORD2
+handleAndDrawDate	KEYWORD2
+
+
+#######################################
+# MACROS
+#######################################
+
+LCDML_getContent	KEYWORD2
+LCDML_createMenu	KEYWORD2
+LCDML_getElementName	KEYWORD2
+LCDML_getCustomElementName	KEYWORD2
+LCDML_add	KEYWORD2
+LCDML_addAdvanced	KEYWORD2
+LCDML_setup	KEYWORD2
+
+LCDML_createCustomLang	KEYWORD2
+LCDML_getCustomContent	KEYWORD2
+LCDML_langDef	KEYWORD2
+
+_LCDML_cfg_use_32bit_cpu	KEYWORD2
+_LCDML_cfg_use_ram	KEYWORD2
