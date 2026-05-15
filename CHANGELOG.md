@@ -52,6 +52,8 @@ All notable LCDMenuLib3 changes are documented here.
 - Added `LCDML3_032_gfx_oled_widgets`.
 - Added `LCDML3_033_esp_network_widgets`.
 - Added `LCDML3_034_diagnostic_storage_widgets`.
+- Reworked all `LCDML3_*` examples into Cannaduino-inspired multi-tab sketches with `Control`, `Logic`, `Menu_Render`, `Menu_Dynamic_Functions`, `Menu_Static_Functions`, `Realtime_Clock`, and `TasksScheduler` files.
+- Added Serial Monitor 128x64-style ASCII rendering to make the examples testable without display hardware.
 
 ### Documentation
 

@@ -1,109 +1,103 @@
+// ##########################################################################################################################
+// ########### LCDML3 ADVANCED WIDGETS #################################################################################################
+// ##########################################################################################################################
+// Cannaduino-inspired LCDMenuLib3 example.
+// Board/display target: 128x64 advanced UI
+// This sketch renders a 128x64 style screen in Serial Monitor so it can compile without display hardware.
+
+#include <Arduino.h>
 #include <LCDMenuLib3.h>
+#include <LCDMenuLib3_widgets.h>
 
-LCDML3_NumericEditor temperature;
-LCDML3_FloatEditor pidKp;
-LCDML3_IPAddressEditor ip;
-LCDML3_WiFiMenu wifiMenu;
-LCDML3_BluetoothMenu btMenu;
-LCDML3_MenuHeader header;
-LCDML3_Theme theme;
-LCDML3_DebugMenu debugMenu;
-LCDML3_StatusBar statusBar;
-LCDML3_ConfirmDialog confirmDialog;
-LCDML3_PinEditor pinEditor;
-LCDML3_ProgressScreen progress;
-LCDML3_Wizard wizard;
+#define EXAMPLE_TITLE "LCDML3 ADVANCED WIDGETS"
+#define EXAMPLE_BOARD "128x64 advanced UI"
+#define EXAMPLE_PROFILE PROFILE_ADVANCED
 
-uint8_t settingsBytes[32];
+#define PROFILE_SERIAL 0
+#define PROFILE_DYNAMIC 1
+#define PROFILE_ADVANCED 2
+#define PROFILE_ALL 3
+#define PROFILE_LCD20X4 4
+#define PROFILE_OLED 5
+#define PROFILE_ESP 6
+#define PROFILE_DIAG 7
 
-uint8_t settingsRead(uint16_t address)
-{
-    return address < sizeof(settingsBytes) ? settingsBytes[address] : 0;
+#define PAGE_TIME 0
+#define PAGE_VALUES 1
+#define PAGE_LISTS 2
+#define PAGE_NETWORK 3
+#define PAGE_SYSTEM 4
+#define PAGE_DIAGNOSTIC 5
+#define PAGE_STORAGE 6
+#define PAGE_SECURITY 7
+#define PAGE_COUNT 8
+
+struct ExampleState {
+    uint8_t page;
+    char lastInput;
+    bool redraw;
+    unsigned long now;
+    unsigned long lastClockMs;
+    unsigned long lastSensorMs;
+    unsigned long lastRenderMs;
+    unsigned long renderIntervalMs;
+    uint8_t clockHour;
+    uint8_t clockMinute;
+    uint8_t clockSecond;
+    int16_t sensorValue;
+    uint8_t lastAction;
+};
+
+ExampleState app = { EXAMPLE_PROFILE, 0, true, 0, 0, 0, 0, 500, 14, 32, 0, 256, 0 };
+
+void controlBegin();
+void controlLoop();
+void controlConsumeHelp();
+void logicBegin();
+void logicLoop();
+void menuDynamicHandleInput(char input);
+void menuStaticBegin();
+void menuStaticAbout();
+void menuStaticDefaults();
+void renderBegin();
+void renderScreen();
+void clockLoop();
+void clockFormat(char *buffer, size_t size);
+void tasksBegin();
+void tasksLoop();
+bool tasksShouldRender();
+
+void printBootBanner() {
+    Serial.println(F("################################################################"));
+    Serial.println(F("# LCDMenuLib3 Cannaduino-style multi-file example"));
+    Serial.print(F("# Example: "));
+    Serial.println(F(EXAMPLE_TITLE));
+    Serial.print(F("# Target : "));
+    Serial.println(F(EXAMPLE_BOARD));
+    Serial.println(F("################################################################"));
 }
 
-void settingsWrite(uint16_t address, uint8_t value)
-{
-    if(address < sizeof(settingsBytes)) settingsBytes[address] = value;
-}
-
-void settingsCommit()
-{
-    Serial.println(F("Settings committed"));
-}
-
-LCDML3_SettingsAdapter settings;
-
-void setup()
-{
+void setup() {
     Serial.begin(115200);
-    while(!Serial) {}
+    while(!Serial && millis() < 2000) {}
 
-    temperature.begin(21, -20, 80, 1);
-    pidKp.begin(1.25f, 0.0f, 10.0f, 0.05f, 2);
-    ip.begin(192, 168, 4, 1);
-    wifiMenu.setCredentials("MyWiFi", "secret");
-    wifiMenu.setState(LCDML3_NET_SCAN);
-    btMenu.setState(LCDML3_BT_DISCOVER);
-    btMenu.setBleMode(true);
-    header.begin("Settings", "Advanced", 1);
-    theme.setSymbols(">", "[x]", "[ ]", "(o)", "( )");
-    debugMenu.begin(13);
-    statusBar.setIcon(LCDML3_ICON_WIFI, true);
-    statusBar.setIcon(LCDML3_ICON_BT, true);
-    confirmDialog.begin(false);
-    pinEditor.begin(4);
-    progress.begin(100);
-    wizard.begin(4);
-    settings.begin(settingsRead, settingsWrite, settingsCommit);
-
-    settings.writeInt32(0, temperature.getValue());
-    settings.writeFloat(4, pidKp.getValue());
-    settings.commit();
+    printBootBanner();
+    controlBegin();
+    logicBegin();
+    menuStaticBegin();
+    tasksBegin();
+    renderBegin();
+    menuStaticAbout();
 }
 
-void loop()
-{
-    char line[48];
+void loop() {
+    app.now = millis();
+    controlLoop();
+    clockLoop();
+    logicLoop();
+    tasksLoop();
 
-    temperature.increment();
-    pidKp.increment();
-    ip.nextField();
-    ip.increment();
-    btMenu.nextAction();
-    progress.add(5);
-    wizard.markComplete(wizard.getStep(), true);
-    wizard.next();
-
-    header.format(line, sizeof(line));
-    Serial.println(line);
-
-    temperature.format(line, sizeof(line), " C");
-    Serial.print(F("Temperature: "));
-    Serial.println(line);
-
-    pidKp.format(line, sizeof(line));
-    Serial.print(F("PID Kp: "));
-    Serial.println(line);
-
-    ip.format(line, sizeof(line));
-    Serial.print(F("IP: "));
-    Serial.println(line);
-
-    wifiMenu.formatStatus(line, sizeof(line));
-    Serial.println(line);
-
-    btMenu.formatStatus(line, sizeof(line));
-    Serial.println(line);
-
-    statusBar.format(line, sizeof(line));
-    Serial.print(F("Status: "));
-    Serial.println(line);
-
-    progress.format(line, sizeof(line), "OTA");
-    Serial.println(line);
-
-    Serial.print(F("Wizard step: "));
-    Serial.println(wizard.getStep());
-
-    delay(1000);
+    if(tasksShouldRender()) {
+        renderScreen();
+    }
 }

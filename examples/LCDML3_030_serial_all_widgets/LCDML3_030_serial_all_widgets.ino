@@ -1,85 +1,103 @@
+// ##########################################################################################################################
+// ########### LCDML3 ALL WIDGETS #################################################################################################
+// ##########################################################################################################################
+// Cannaduino-inspired LCDMenuLib3 example.
+// Board/display target: Serial dashboard
+// This sketch renders a 128x64 style screen in Serial Monitor so it can compile without display hardware.
+
+#include <Arduino.h>
 #include <LCDMenuLib3.h>
+#include <LCDMenuLib3_widgets.h>
 
-LCDML3_RotaryEncoderHelper encoder;
-LCDML3_Sparkline graph;
-LCDML3_LogViewer logs;
-LCDML3_AlarmScheduler alarms;
-LCDML3_UnitSelector units;
-LCDML3_OTAStatus ota;
-LCDML3_CalibrationWizard calibration;
-LCDML3_ActionMenu actions;
-LCDML3_SDFileMenu files;
-LCDML3_DiagnosticMenu diag;
-LCDML3_Theme theme;
+#define EXAMPLE_TITLE "LCDML3 ALL WIDGETS"
+#define EXAMPLE_BOARD "Serial dashboard"
+#define EXAMPLE_PROFILE PROFILE_ALL
 
-const char *unitLabels[] = {"C", "F", "%", "rpm"};
+#define PROFILE_SERIAL 0
+#define PROFILE_DYNAMIC 1
+#define PROFILE_ADVANCED 2
+#define PROFILE_ALL 3
+#define PROFILE_LCD20X4 4
+#define PROFILE_OLED 5
+#define PROFILE_ESP 6
+#define PROFILE_DIAG 7
 
-void actionCallback(uint8_t id)
-{
-    Serial.print(F("Action triggered: "));
-    Serial.println(id);
+#define PAGE_TIME 0
+#define PAGE_VALUES 1
+#define PAGE_LISTS 2
+#define PAGE_NETWORK 3
+#define PAGE_SYSTEM 4
+#define PAGE_DIAGNOSTIC 5
+#define PAGE_STORAGE 6
+#define PAGE_SECURITY 7
+#define PAGE_COUNT 8
+
+struct ExampleState {
+    uint8_t page;
+    char lastInput;
+    bool redraw;
+    unsigned long now;
+    unsigned long lastClockMs;
+    unsigned long lastSensorMs;
+    unsigned long lastRenderMs;
+    unsigned long renderIntervalMs;
+    uint8_t clockHour;
+    uint8_t clockMinute;
+    uint8_t clockSecond;
+    int16_t sensorValue;
+    uint8_t lastAction;
+};
+
+ExampleState app = { EXAMPLE_PROFILE, 0, true, 0, 0, 0, 0, 500, 14, 32, 0, 256, 0 };
+
+void controlBegin();
+void controlLoop();
+void controlConsumeHelp();
+void logicBegin();
+void logicLoop();
+void menuDynamicHandleInput(char input);
+void menuStaticBegin();
+void menuStaticAbout();
+void menuStaticDefaults();
+void renderBegin();
+void renderScreen();
+void clockLoop();
+void clockFormat(char *buffer, size_t size);
+void tasksBegin();
+void tasksLoop();
+bool tasksShouldRender();
+
+void printBootBanner() {
+    Serial.println(F("################################################################"));
+    Serial.println(F("# LCDMenuLib3 Cannaduino-style multi-file example"));
+    Serial.print(F("# Example: "));
+    Serial.println(F(EXAMPLE_TITLE));
+    Serial.print(F("# Target : "));
+    Serial.println(F(EXAMPLE_BOARD));
+    Serial.println(F("################################################################"));
 }
 
-void setup()
-{
+void setup() {
     Serial.begin(115200);
-    while(!Serial) {}
+    while(!Serial && millis() < 2000) {}
 
-    encoder.begin(1, 10, 100);
-    graph.begin(0, 1023);
-    logs.add(LCDML3_LOG_INFO, "Boot");
-    logs.add(LCDML3_LOG_WARN, "Low battery");
-    alarms.set(0, 7, 30, 0b0111110, true);
-    units.begin(unitLabels, 4, 0);
-    ota.setState(LCDML3_OTA_CHECKING);
-    calibration.captureRaw(0, 100, 0);
-    calibration.captureRaw(1, 900, 1000);
-    actions.begin(actionCallback);
-    files.begin(3);
-    files.setItemCount(8);
-    diag.setI2CFound(3);
-    diag.setWiFiFound(5);
-    diag.setHeap(20480);
-    LCDML3_applyThemePreset(theme, LCDML3_THEME_HIGH_CONTRAST);
+    printBootBanner();
+    controlBegin();
+    logicBegin();
+    menuStaticBegin();
+    tasksBegin();
+    renderBegin();
+    menuStaticAbout();
 }
 
-void loop()
-{
-    char text[64];
+void loop() {
+    app.now = millis();
+    controlLoop();
+    clockLoop();
+    logicLoop();
+    tasksLoop();
 
-    int16_t delta = encoder.update(1, millis());
-    graph.add((millis() / 10) % 1024);
-    ota.setProgress((ota.getProgress() + 5) % 101);
-    units.next();
-    files.down();
-    actions.trigger(files.getCursor());
-    diag.setUptime(millis());
-
-    Serial.print(F("Encoder delta: "));
-    Serial.println(delta);
-
-    graph.format(text, sizeof(text));
-    Serial.print(F("Sparkline: "));
-    Serial.println(text);
-
-    LCDML3_LogEntry entry;
-    if(logs.getVisible(0, entry))
-    {
-        Serial.print(F("Log: "));
-        Serial.println(entry.message);
+    if(tasksShouldRender()) {
+        renderScreen();
     }
-
-    ota.format(text, sizeof(text));
-    Serial.println(text);
-
-    diag.format(text, sizeof(text));
-    Serial.println(text);
-
-    Serial.print(F("Unit: "));
-    Serial.println(units.getLabel());
-
-    Serial.print(F("Theme cursor: "));
-    Serial.println(theme.cursorSymbol());
-
-    delay(1000);
 }

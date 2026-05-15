@@ -1,55 +1,103 @@
+// ##########################################################################################################################
+// ########### LCDML3 DIAG STORAGE #################################################################################################
+// ##########################################################################################################################
+// Cannaduino-inspired LCDMenuLib3 example.
+// Board/display target: Diagnostics / SD / EEPROM
+// This sketch renders a 128x64 style screen in Serial Monitor so it can compile without display hardware.
+
+#include <Arduino.h>
 #include <LCDMenuLib3.h>
-#include <EEPROM.h>
+#include <LCDMenuLib3_widgets.h>
 
-LCDML3_SettingsAdapter settings;
-LCDML3_SDFileMenu fileMenu;
-LCDML3_DiagnosticMenu diag;
+#define EXAMPLE_TITLE "LCDML3 DIAG STORAGE"
+#define EXAMPLE_BOARD "Diagnostics / SD / EEPROM"
+#define EXAMPLE_PROFILE PROFILE_DIAG
 
-uint8_t readSetting(uint16_t address)
-{
-    return EEPROM.read(address);
+#define PROFILE_SERIAL 0
+#define PROFILE_DYNAMIC 1
+#define PROFILE_ADVANCED 2
+#define PROFILE_ALL 3
+#define PROFILE_LCD20X4 4
+#define PROFILE_OLED 5
+#define PROFILE_ESP 6
+#define PROFILE_DIAG 7
+
+#define PAGE_TIME 0
+#define PAGE_VALUES 1
+#define PAGE_LISTS 2
+#define PAGE_NETWORK 3
+#define PAGE_SYSTEM 4
+#define PAGE_DIAGNOSTIC 5
+#define PAGE_STORAGE 6
+#define PAGE_SECURITY 7
+#define PAGE_COUNT 8
+
+struct ExampleState {
+    uint8_t page;
+    char lastInput;
+    bool redraw;
+    unsigned long now;
+    unsigned long lastClockMs;
+    unsigned long lastSensorMs;
+    unsigned long lastRenderMs;
+    unsigned long renderIntervalMs;
+    uint8_t clockHour;
+    uint8_t clockMinute;
+    uint8_t clockSecond;
+    int16_t sensorValue;
+    uint8_t lastAction;
+};
+
+ExampleState app = { EXAMPLE_PROFILE, 0, true, 0, 0, 0, 0, 500, 14, 32, 0, 256, 0 };
+
+void controlBegin();
+void controlLoop();
+void controlConsumeHelp();
+void logicBegin();
+void logicLoop();
+void menuDynamicHandleInput(char input);
+void menuStaticBegin();
+void menuStaticAbout();
+void menuStaticDefaults();
+void renderBegin();
+void renderScreen();
+void clockLoop();
+void clockFormat(char *buffer, size_t size);
+void tasksBegin();
+void tasksLoop();
+bool tasksShouldRender();
+
+void printBootBanner() {
+    Serial.println(F("################################################################"));
+    Serial.println(F("# LCDMenuLib3 Cannaduino-style multi-file example"));
+    Serial.print(F("# Example: "));
+    Serial.println(F(EXAMPLE_TITLE));
+    Serial.print(F("# Target : "));
+    Serial.println(F(EXAMPLE_BOARD));
+    Serial.println(F("################################################################"));
 }
 
-void writeSetting(uint16_t address, uint8_t value)
-{
-    EEPROM.write(address, value);
-}
-
-void commitSettings()
-{
-#if defined(ESP32) || defined(ESP8266)
-    EEPROM.commit();
-#endif
-}
-
-void setup()
-{
+void setup() {
     Serial.begin(115200);
-#if defined(ESP32) || defined(ESP8266)
-    EEPROM.begin(64);
-#endif
-    settings.begin(readSetting, writeSetting, commitSettings);
-    fileMenu.begin(4);
-    fileMenu.setItemCount(12);
-    settings.writeInt32(0, 123456);
-    settings.commit();
+    while(!Serial && millis() < 2000) {}
+
+    printBootBanner();
+    controlBegin();
+    logicBegin();
+    menuStaticBegin();
+    tasksBegin();
+    renderBegin();
+    menuStaticAbout();
 }
 
-void loop()
-{
-    char text[48];
-    fileMenu.down();
-    diag.setI2CFound(2);
-    diag.setHeap(1024);
-    diag.setUptime(millis());
+void loop() {
+    app.now = millis();
+    controlLoop();
+    clockLoop();
+    logicLoop();
+    tasksLoop();
 
-    Serial.print(F("Selected file index: "));
-    Serial.println(fileMenu.getCursor());
-
-    Serial.print(F("Stored int32: "));
-    Serial.println(settings.readInt32(0));
-
-    diag.format(text, sizeof(text));
-    Serial.println(text);
-    delay(1000);
+    if(tasksShouldRender()) {
+        renderScreen();
+    }
 }

@@ -1,151 +1,103 @@
+// ##########################################################################################################################
+// ########### LCDML3 SERIAL HELPERS #################################################################################################
+// ##########################################################################################################################
+// Cannaduino-inspired LCDMenuLib3 example.
+// Board/display target: Serial Monitor / UNO
+// This sketch renders a 128x64 style screen in Serial Monitor so it can compile without display hardware.
+
+#include <Arduino.h>
 #include <LCDMenuLib3.h>
+#include <LCDMenuLib3_widgets.h>
 
-#define _LCDML_DISP_cols 20
-#define _LCDML_DISP_rows 4
+#define EXAMPLE_TITLE "LCDML3 SERIAL HELPERS"
+#define EXAMPLE_BOARD "Serial Monitor / UNO"
+#define EXAMPLE_PROFILE PROFILE_SERIAL
 
-LCDMenuLib3_menu LCDML_0(255, 0, 0, NULL, NULL);
+#define PROFILE_SERIAL 0
+#define PROFILE_DYNAMIC 1
+#define PROFILE_ADVANCED 2
+#define PROFILE_ALL 3
+#define PROFILE_LCD20X4 4
+#define PROFILE_OLED 5
+#define PROFILE_ESP 6
+#define PROFILE_DIAG 7
 
-void lcdml_menu_display();
-void lcdml_menu_clear();
-void lcdml_menu_control();
-void mFunc_information(uint8_t param);
-void mFunc_settings(uint8_t param);
-void mFunc_screensaver(uint8_t param);
+#define PAGE_TIME 0
+#define PAGE_VALUES 1
+#define PAGE_LISTS 2
+#define PAGE_NETWORK 3
+#define PAGE_SYSTEM 4
+#define PAGE_DIAGNOSTIC 5
+#define PAGE_STORAGE 6
+#define PAGE_SECURITY 7
+#define PAGE_COUNT 8
 
-LCDMenuLib3 LCDML(
-    LCDML_0,
-    _LCDML_DISP_rows,
-    _LCDML_DISP_cols,
-    lcdml_menu_display,
-    lcdml_menu_clear,
-    lcdml_menu_control
-);
+struct ExampleState {
+    uint8_t page;
+    char lastInput;
+    bool redraw;
+    unsigned long now;
+    unsigned long lastClockMs;
+    unsigned long lastSensorMs;
+    unsigned long lastRenderMs;
+    unsigned long renderIntervalMs;
+    uint8_t clockHour;
+    uint8_t clockMinute;
+    uint8_t clockSecond;
+    int16_t sensorValue;
+    uint8_t lastAction;
+};
 
-LCDML_add(0, LCDML_0, 1, "Information", mFunc_information);
-LCDML_add(1, LCDML_0, 2, "Settings", mFunc_settings);
-LCDML_createMenu(1);
+ExampleState app = { EXAMPLE_PROFILE, 0, true, 0, 0, 0, 0, 500, 14, 32, 0, 256, 0 };
 
-void setup()
-{
+void controlBegin();
+void controlLoop();
+void controlConsumeHelp();
+void logicBegin();
+void logicLoop();
+void menuDynamicHandleInput(char input);
+void menuStaticBegin();
+void menuStaticAbout();
+void menuStaticDefaults();
+void renderBegin();
+void renderScreen();
+void clockLoop();
+void clockFormat(char *buffer, size_t size);
+void tasksBegin();
+void tasksLoop();
+bool tasksShouldRender();
+
+void printBootBanner() {
+    Serial.println(F("################################################################"));
+    Serial.println(F("# LCDMenuLib3 Cannaduino-style multi-file example"));
+    Serial.print(F("# Example: "));
+    Serial.println(F(EXAMPLE_TITLE));
+    Serial.print(F("# Target : "));
+    Serial.println(F(EXAMPLE_BOARD));
+    Serial.println(F("################################################################"));
+}
+
+void setup() {
     Serial.begin(115200);
-    while(!Serial) {}
+    while(!Serial && millis() < 2000) {}
 
-    LCDML_setup(1);
-    LCDML.SCREEN_enable(mFunc_screensaver, 10000);
-
-    Serial.println(F("LCDMenuLib3 serial helper demo"));
-    Serial.print(F("Version: "));
-    Serial.println(LCDML.VERSION_get());
-    Serial.println(F("Use u/d/e/q in Serial Monitor."));
+    printBootBanner();
+    controlBegin();
+    logicBegin();
+    menuStaticBegin();
+    tasksBegin();
+    renderBegin();
+    menuStaticAbout();
 }
 
-void loop()
-{
-    LCDML.loop();
-}
+void loop() {
+    app.now = millis();
+    controlLoop();
+    clockLoop();
+    logicLoop();
+    tasksLoop();
 
-void lcdml_menu_clear()
-{
-    Serial.println();
-}
-
-void lcdml_menu_display()
-{
-    if(LCDML.DISP_checkMenuUpdate())
-    {
-        char content_text[21];
-        Serial.println(F("--- menu ---"));
-
-        for(uint8_t n = 0; n < LCDML.MENU_getWindowRows(); n++)
-        {
-            uint8_t content_id = LCDML.DISP_getMenuContentId(n);
-
-            if(content_id < _LCDML_NO_FUNC)
-            {
-                LCDML_getContent(content_text, content_id);
-                Serial.print(n == LCDML.MENU_getCursorPos() ? F("> ") : F("  "));
-                Serial.println(content_text);
-            }
-        }
-
-        Serial.print(F("Displayed id: "));
-        Serial.println(LCDML.MENU_getDisplayedElementID());
-    }
-}
-
-void lcdml_menu_control()
-{
-    if(Serial.available() == 0)
-    {
-        return;
-    }
-
-    char c = Serial.read();
-
-    if(c == 'u') LCDML.BT_press(_LCDML_REG_button_up);
-    if(c == 'd') LCDML.BT_press(_LCDML_REG_button_down);
-    if(c == 'e') LCDML.BT_press(_LCDML_REG_button_enter);
-    if(c == 'q') LCDML.BT_press(_LCDML_REG_button_quit);
-}
-
-void mFunc_information(uint8_t param)
-{
-    if(LCDML.FUNC_setup())
-    {
-        Serial.println(F("Information page"));
-        Serial.print(F("Param: "));
-        Serial.println(param);
-        LCDML.FUNC_setLoopInterval(500);
-    }
-
-    if(LCDML.FUNC_loop())
-    {
-        Serial.print(F("Active id: "));
-        Serial.println(LCDML.FUNC_getID());
-    }
-
-    if(LCDML.FUNC_close())
-    {
-        Serial.println(F("Leaving information page"));
-    }
-}
-
-void mFunc_settings(uint8_t param)
-{
-    if(LCDML.FUNC_setup())
-    {
-        Serial.println(F("Settings page"));
-        Serial.print(F("Screensaver enabled: "));
-        Serial.println(LCDML.SCREEN_isEnabled() ? F("yes") : F("no"));
-        Serial.print(F("Screensaver timeout: "));
-        Serial.println(LCDML.SCREEN_getTimeout());
-        LCDML.FUNC_setLoopInterval(500);
-    }
-
-    if(LCDML.FUNC_loop())
-    {
-        Serial.print(F("Menu has children: "));
-        Serial.println(LCDML.MENU_hasChildren() ? F("yes") : F("no"));
-    }
-
-    if(LCDML.FUNC_close())
-    {
-        Serial.println(F("Leaving settings page"));
-    }
-}
-
-void mFunc_screensaver(uint8_t param)
-{
-    LCDML_UNUSED(param);
-
-    if(LCDML.FUNC_setup())
-    {
-        Serial.println(F("Screensaver started. Press q to return."));
-        LCDML.FUNC_setLoopInterval(1000);
-    }
-
-    if(LCDML.FUNC_loop())
-    {
-        Serial.println(F("Screensaver tick"));
+    if(tasksShouldRender()) {
+        renderScreen();
     }
 }

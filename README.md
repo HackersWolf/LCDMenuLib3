@@ -95,7 +95,11 @@ It keeps the familiar LCDMenuLib2 menu tree, callback, and navigation model, the
 
 Open the examples from the Arduino IDE or compile them with `arduino-cli`.
 
-Some examples are not complete/functioning yet — I’m still working on them 🙂
+The `LCDML3_*` examples use a Cannaduino-inspired multi-tab Arduino structure:
+`Control.ino`, `Logic.ino`, `Menu_Render.ino`, `Menu_Dynamic_Functions.ino`,
+`Menu_Static_Functions.ino`, `Realtime_Clock.ino`, and `TasksScheduler.ino`.
+They render a 128x64-style ASCII screen in Serial Monitor so the sketches remain
+easy to compile and test without display hardware.
 
 - `LCDML3_000_serial_helpers`: core LCDMenuLib3 helper methods.
 - `LCDML3_010_dynamic_widgets`: time, timer, date, radio list, checklist, and state buttons.
