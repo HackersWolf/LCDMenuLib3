@@ -1616,9 +1616,9 @@ This keeps LCDMenuLib3 compilable on AVR boards while still supporting ESP proje
 
 For ESP32 Preferences, connect `LCDML3_SettingsAdapter` to wrapper callbacks. For WiFi and Bluetooth, use `LCDML3_WiFiMenu` and `LCDML3_BluetoothMenu` to track menu state while your sketch calls `WiFi.scanNetworks()`, `WiFi.begin()`, BLE scan APIs, or Bluetooth pairing APIs.
 
-## Extra System Widgets
+## System and Utility Widgets
 
-Additional LCDMenuLib3 helpers added after the first widget set:
+LCDMenuLib3 includes these helpers for controls, diagnostics, setup flows, storage menus, graphs, logs, and action-oriented interfaces:
 
 - `LCDML3_RotaryEncoderHelper`: converts encoder direction into accelerated steps.
 - `LCDML3_TouchMenu`: maps touchscreen coordinates to menu/action IDs.

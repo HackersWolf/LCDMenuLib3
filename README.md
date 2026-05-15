@@ -43,7 +43,7 @@ All original LCDMenuLib2 MIT license notices are preserved. LCDMenuLib3 adds new
   - `LCDML3_DebugMenu` for GPIO read/write and serial debug helpers.
   - `LCDML3_ConfirmDialog`, `LCDML3_PinEditor`, `LCDML3_ProgressScreen`, and `LCDML3_Wizard`.
   - `LCDML3_SettingsAdapter` for EEPROM, ESP32 Preferences, SD, or any storage using read/write callbacks.
-- Extra system widgets:
+- System and utility widgets:
   - `LCDML3_RotaryEncoderHelper` for encoder acceleration.
   - `LCDML3_TouchMenu` for touchscreen hitboxes.
   - `LCDML3_Sparkline` for compact sensor graphs.
