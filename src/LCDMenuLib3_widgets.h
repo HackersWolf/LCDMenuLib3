@@ -543,4 +543,244 @@ class LCDML3_SettingsAdapter
         LCDML3_SettingsCommitFn commitFn;
 };
 
+class LCDML3_RotaryEncoderHelper
+{
+    public:
+        LCDML3_RotaryEncoderHelper();
+        void begin(uint16_t slowStep = 1, uint16_t fastStep = 5, uint16_t fastThresholdMs = 80);
+        int16_t update(int8_t direction, unsigned long nowMs);
+        void reset(void);
+        uint16_t getLastStep(void) const;
+
+    private:
+        uint16_t slowStep;
+        uint16_t fastStep;
+        uint16_t fastThresholdMs;
+        uint16_t lastStep;
+        unsigned long lastMs;
+};
+
+struct LCDML3_Hitbox
+{
+    int16_t x;
+    int16_t y;
+    int16_t w;
+    int16_t h;
+    uint8_t id;
+};
+
+class LCDML3_TouchMenu
+{
+    public:
+        LCDML3_TouchMenu();
+        void begin(LCDML3_Hitbox *boxes, uint8_t count);
+        int8_t hit(int16_t x, int16_t y) const;
+        void setEnabled(uint8_t index, bool enabled);
+        bool isEnabled(uint8_t index) const;
+
+    private:
+        LCDML3_Hitbox *boxes;
+        uint8_t count;
+        uint32_t enabledMask;
+};
+
+class LCDML3_Sparkline
+{
+    public:
+        LCDML3_Sparkline();
+        void begin(int16_t minValue, int16_t maxValue);
+        void add(int16_t value);
+        uint8_t size(void) const;
+        int16_t get(uint8_t index) const;
+        uint8_t normalized(uint8_t index, uint8_t height) const;
+        void format(char *buffer, size_t size) const;
+
+    private:
+        int16_t values[24];
+        uint8_t count;
+        uint8_t head;
+        int16_t minVal;
+        int16_t maxVal;
+};
+
+enum LCDML3_LogLevel : uint8_t
+{
+    LCDML3_LOG_INFO = 0,
+    LCDML3_LOG_WARN,
+    LCDML3_LOG_ERROR
+};
+
+struct LCDML3_LogEntry
+{
+    LCDML3_LogLevel level;
+    char message[25];
+};
+
+class LCDML3_LogViewer
+{
+    public:
+        LCDML3_LogViewer();
+        void clear(void);
+        void add(LCDML3_LogLevel level, const char *message);
+        void setFilter(LCDML3_LogLevel minLevel);
+        LCDML3_LogLevel getFilter(void) const;
+        uint8_t countVisible(void) const;
+        bool getVisible(uint8_t visibleIndex, LCDML3_LogEntry &out) const;
+
+    private:
+        LCDML3_LogEntry entries[12];
+        uint8_t count;
+        uint8_t head;
+        LCDML3_LogLevel filter;
+};
+
+struct LCDML3_Alarm
+{
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t daysMask;
+    bool enabled;
+};
+
+class LCDML3_AlarmScheduler
+{
+    public:
+        LCDML3_AlarmScheduler();
+        void begin(void);
+        void set(uint8_t index, uint8_t hour, uint8_t minute, uint8_t daysMask, bool enabled = true);
+        LCDML3_Alarm get(uint8_t index) const;
+        bool matches(uint8_t index, uint8_t hour, uint8_t minute, uint8_t dayBit) const;
+        uint8_t count(void) const;
+
+    private:
+        LCDML3_Alarm alarms[8];
+};
+
+class LCDML3_UnitSelector
+{
+    public:
+        LCDML3_UnitSelector();
+        void begin(const char **units, uint8_t count, uint8_t selected = 0);
+        void next(void);
+        void previous(void);
+        uint8_t getSelected(void) const;
+        const char *getLabel(void) const;
+
+    private:
+        const char **units;
+        uint8_t count;
+        uint8_t selected;
+};
+
+enum LCDML3_OTAState : uint8_t
+{
+    LCDML3_OTA_IDLE = 0,
+    LCDML3_OTA_CHECKING,
+    LCDML3_OTA_DOWNLOADING,
+    LCDML3_OTA_FLASHING,
+    LCDML3_OTA_DONE,
+    LCDML3_OTA_ERROR
+};
+
+class LCDML3_OTAStatus
+{
+    public:
+        LCDML3_OTAStatus();
+        void begin(void);
+        void setState(LCDML3_OTAState state);
+        LCDML3_OTAState getState(void) const;
+        void setProgress(uint8_t percent);
+        uint8_t getProgress(void) const;
+        void format(char *buffer, size_t size) const;
+
+    private:
+        LCDML3_OTAState state;
+        uint8_t progress;
+};
+
+class LCDML3_CalibrationWizard
+{
+    public:
+        LCDML3_CalibrationWizard();
+        void begin(uint8_t points);
+        void captureRaw(uint8_t point, int32_t raw, int32_t reference);
+        int32_t apply(int32_t raw) const;
+        void reset(void);
+        bool isReady(void) const;
+
+    private:
+        int32_t rawValues[4];
+        int32_t refValues[4];
+        uint8_t points;
+        uint8_t capturedMask;
+};
+
+typedef void (*LCDML3_ActionFn)(uint8_t id);
+
+class LCDML3_ActionMenu
+{
+    public:
+        LCDML3_ActionMenu();
+        void begin(LCDML3_ActionFn actionFn = NULL);
+        void setAction(LCDML3_ActionFn actionFn);
+        void trigger(uint8_t id);
+        uint8_t getLastAction(void) const;
+
+    private:
+        LCDML3_ActionFn actionFn;
+        uint8_t lastAction;
+};
+
+enum LCDML3_ThemePreset : uint8_t
+{
+    LCDML3_THEME_LCD = 0,
+    LCDML3_THEME_OLED,
+    LCDML3_THEME_TFT_DARK,
+    LCDML3_THEME_TFT_LIGHT,
+    LCDML3_THEME_HIGH_CONTRAST
+};
+
+void LCDML3_applyThemePreset(LCDML3_Theme &theme, LCDML3_ThemePreset preset);
+
+class LCDML3_SDFileMenu
+{
+    public:
+        LCDML3_SDFileMenu();
+        void begin(uint8_t visibleRows = 4);
+        void setItemCount(uint8_t count);
+        void up(void);
+        void down(void);
+        void select(uint8_t index);
+        uint8_t getCursor(void) const;
+        uint8_t getSelected(void) const;
+        uint8_t getWindowStart(void) const;
+        uint8_t getVisibleRows(void) const;
+
+    private:
+        uint8_t itemCount;
+        uint8_t rows;
+        uint8_t cursor;
+        uint8_t selected;
+        uint8_t windowStart;
+        void keepVisible(void);
+};
+
+class LCDML3_DiagnosticMenu
+{
+    public:
+        LCDML3_DiagnosticMenu();
+        void begin(void);
+        void setI2CFound(uint8_t count);
+        void setWiFiFound(uint8_t count);
+        void setHeap(uint32_t heap);
+        void setUptime(unsigned long uptimeMs);
+        void format(char *buffer, size_t size) const;
+
+    private:
+        uint8_t i2cFound;
+        uint8_t wifiFound;
+        uint32_t heap;
+        unsigned long uptimeMs;
+};
+
 #endif

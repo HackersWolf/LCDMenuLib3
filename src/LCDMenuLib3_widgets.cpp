@@ -1149,3 +1149,301 @@ void LCDML3_SettingsAdapter::commit(void)
 {
     if(commitFn != NULL) commitFn();
 }
+
+LCDML3_RotaryEncoderHelper::LCDML3_RotaryEncoderHelper() { begin(); }
+
+void LCDML3_RotaryEncoderHelper::begin(uint16_t slow, uint16_t fast, uint16_t threshold)
+{
+    slowStep = slow == 0 ? 1 : slow;
+    fastStep = fast < slowStep ? slowStep : fast;
+    fastThresholdMs = threshold;
+    reset();
+}
+
+int16_t LCDML3_RotaryEncoderHelper::update(int8_t direction, unsigned long nowMs)
+{
+    if(direction == 0) return 0;
+    lastStep = (lastMs != 0 && (nowMs - lastMs) <= fastThresholdMs) ? fastStep : slowStep;
+    lastMs = nowMs;
+    return direction > 0 ? (int16_t)lastStep : -(int16_t)lastStep;
+}
+
+void LCDML3_RotaryEncoderHelper::reset(void) { lastMs = 0; lastStep = slowStep; }
+uint16_t LCDML3_RotaryEncoderHelper::getLastStep(void) const { return lastStep; }
+
+LCDML3_TouchMenu::LCDML3_TouchMenu() { begin(NULL, 0); }
+
+void LCDML3_TouchMenu::begin(LCDML3_Hitbox *hitboxes, uint8_t itemCount)
+{
+    boxes = hitboxes;
+    count = itemCount > 32 ? 32 : itemCount;
+    enabledMask = count >= 32 ? 0xFFFFFFFFUL : ((1UL << count) - 1UL);
+}
+
+int8_t LCDML3_TouchMenu::hit(int16_t px, int16_t py) const
+{
+    if(boxes == NULL) return -1;
+    for(uint8_t i = 0; i < count; i++)
+    {
+        if(isEnabled(i) && px >= boxes[i].x && py >= boxes[i].y && px < boxes[i].x + boxes[i].w && py < boxes[i].y + boxes[i].h)
+        {
+            return boxes[i].id;
+        }
+    }
+    return -1;
+}
+
+void LCDML3_TouchMenu::setEnabled(uint8_t index, bool enabled)
+{
+    if(index >= count) return;
+    if(enabled) enabledMask |= (1UL << index);
+    else enabledMask &= ~(1UL << index);
+}
+
+bool LCDML3_TouchMenu::isEnabled(uint8_t index) const
+{
+    return index < count && (enabledMask & (1UL << index)) != 0;
+}
+
+LCDML3_Sparkline::LCDML3_Sparkline() { begin(0, 100); }
+
+void LCDML3_Sparkline::begin(int16_t minValue, int16_t maxValue)
+{
+    minVal = minValue;
+    maxVal = maxValue == minValue ? minValue + 1 : maxValue;
+    count = 0;
+    head = 0;
+}
+
+void LCDML3_Sparkline::add(int16_t value)
+{
+    values[head] = value;
+    head = (head + 1) % 24;
+    if(count < 24) count++;
+}
+
+uint8_t LCDML3_Sparkline::size(void) const { return count; }
+
+int16_t LCDML3_Sparkline::get(uint8_t index) const
+{
+    if(index >= count) return 0;
+    uint8_t start = (head + 24 - count) % 24;
+    return values[(start + index) % 24];
+}
+
+uint8_t LCDML3_Sparkline::normalized(uint8_t index, uint8_t height) const
+{
+    if(height == 0) return 0;
+    int16_t value = get(index);
+    if(value < minVal) value = minVal;
+    if(value > maxVal) value = maxVal;
+    return (uint8_t)(((long)(value - minVal) * (height - 1)) / (maxVal - minVal));
+}
+
+void LCDML3_Sparkline::format(char *buffer, size_t size) const
+{
+    if(buffer == NULL || size == 0) return;
+    uint8_t n = count < (size - 1) ? count : (uint8_t)(size - 1);
+    for(uint8_t i = 0; i < n; i++)
+    {
+        uint8_t v = normalized(i, 4);
+        buffer[i] = v == 0 ? '_' : (v == 1 ? '-' : (v == 2 ? '=' : '#'));
+    }
+    buffer[n] = '\0';
+}
+
+LCDML3_LogViewer::LCDML3_LogViewer() { clear(); filter = LCDML3_LOG_INFO; }
+
+void LCDML3_LogViewer::clear(void) { count = 0; head = 0; }
+
+void LCDML3_LogViewer::add(LCDML3_LogLevel level, const char *message)
+{
+    entries[head].level = level;
+    lcdml3_copyText(entries[head].message, sizeof(entries[head].message), message);
+    head = (head + 1) % 12;
+    if(count < 12) count++;
+}
+
+void LCDML3_LogViewer::setFilter(LCDML3_LogLevel minLevel) { filter = minLevel; }
+LCDML3_LogLevel LCDML3_LogViewer::getFilter(void) const { return filter; }
+
+uint8_t LCDML3_LogViewer::countVisible(void) const
+{
+    uint8_t visible = 0;
+    for(uint8_t i = 0; i < count; i++)
+    {
+        LCDML3_LogEntry entry;
+        uint8_t start = (head + 12 - count) % 12;
+        entry = entries[(start + i) % 12];
+        if(entry.level >= filter) visible++;
+    }
+    return visible;
+}
+
+bool LCDML3_LogViewer::getVisible(uint8_t visibleIndex, LCDML3_LogEntry &out) const
+{
+    uint8_t visible = 0;
+    uint8_t start = (head + 12 - count) % 12;
+    for(uint8_t i = 0; i < count; i++)
+    {
+        LCDML3_LogEntry entry = entries[(start + i) % 12];
+        if(entry.level >= filter)
+        {
+            if(visible == visibleIndex)
+            {
+                out = entry;
+                return true;
+            }
+            visible++;
+        }
+    }
+    return false;
+}
+
+LCDML3_AlarmScheduler::LCDML3_AlarmScheduler() { begin(); }
+
+void LCDML3_AlarmScheduler::begin(void)
+{
+    for(uint8_t i = 0; i < 8; i++) set(i, 0, 0, 0, false);
+}
+
+void LCDML3_AlarmScheduler::set(uint8_t index, uint8_t hour, uint8_t minute, uint8_t daysMask, bool enabled)
+{
+    if(index >= 8) return;
+    alarms[index].hour = hour > 23 ? 23 : hour;
+    alarms[index].minute = minute > 59 ? 59 : minute;
+    alarms[index].daysMask = daysMask;
+    alarms[index].enabled = enabled;
+}
+
+LCDML3_Alarm LCDML3_AlarmScheduler::get(uint8_t index) const
+{
+    LCDML3_Alarm empty = {0, 0, 0, false};
+    return index < 8 ? alarms[index] : empty;
+}
+
+bool LCDML3_AlarmScheduler::matches(uint8_t index, uint8_t hour, uint8_t minute, uint8_t dayBit) const
+{
+    if(index >= 8) return false;
+    return alarms[index].enabled && alarms[index].hour == hour && alarms[index].minute == minute && (alarms[index].daysMask & dayBit) != 0;
+}
+
+uint8_t LCDML3_AlarmScheduler::count(void) const { return 8; }
+
+LCDML3_UnitSelector::LCDML3_UnitSelector() { begin(NULL, 0, 0); }
+
+void LCDML3_UnitSelector::begin(const char **unitLabels, uint8_t unitCount, uint8_t selectedIndex)
+{
+    units = unitLabels;
+    count = unitCount;
+    selected = (count == 0 || selectedIndex >= count) ? 0 : selectedIndex;
+}
+
+void LCDML3_UnitSelector::next(void) { if(count > 0) selected = (selected + 1) % count; }
+void LCDML3_UnitSelector::previous(void) { if(count > 0) selected = selected == 0 ? count - 1 : selected - 1; }
+uint8_t LCDML3_UnitSelector::getSelected(void) const { return selected; }
+const char *LCDML3_UnitSelector::getLabel(void) const { return (units == NULL || count == 0) ? "" : units[selected]; }
+
+LCDML3_OTAStatus::LCDML3_OTAStatus() { begin(); }
+void LCDML3_OTAStatus::begin(void) { state = LCDML3_OTA_IDLE; progress = 0; }
+void LCDML3_OTAStatus::setState(LCDML3_OTAState newState) { state = newState; }
+LCDML3_OTAState LCDML3_OTAStatus::getState(void) const { return state; }
+void LCDML3_OTAStatus::setProgress(uint8_t percent) { progress = percent > 100 ? 100 : percent; }
+uint8_t LCDML3_OTAStatus::getProgress(void) const { return progress; }
+
+void LCDML3_OTAStatus::format(char *buffer, size_t size) const
+{
+    if(buffer == NULL || size == 0) return;
+    const char *labels[] = {"Idle", "Checking", "Download", "Flashing", "Done", "Error"};
+    snprintf(buffer, size, "OTA %s %u%%", labels[state], progress);
+}
+
+LCDML3_CalibrationWizard::LCDML3_CalibrationWizard() { begin(2); }
+
+void LCDML3_CalibrationWizard::begin(uint8_t pointCount)
+{
+    points = pointCount < 2 ? 2 : (pointCount > 4 ? 4 : pointCount);
+    reset();
+}
+
+void LCDML3_CalibrationWizard::captureRaw(uint8_t point, int32_t raw, int32_t reference)
+{
+    if(point >= points) return;
+    rawValues[point] = raw;
+    refValues[point] = reference;
+    capturedMask |= (1 << point);
+}
+
+int32_t LCDML3_CalibrationWizard::apply(int32_t raw) const
+{
+    if(!isReady() || rawValues[1] == rawValues[0]) return raw;
+    return refValues[0] + ((raw - rawValues[0]) * (refValues[1] - refValues[0])) / (rawValues[1] - rawValues[0]);
+}
+
+void LCDML3_CalibrationWizard::reset(void)
+{
+    capturedMask = 0;
+    for(uint8_t i = 0; i < 4; i++) { rawValues[i] = 0; refValues[i] = 0; }
+}
+
+bool LCDML3_CalibrationWizard::isReady(void) const
+{
+    return (capturedMask & 0x03) == 0x03;
+}
+
+LCDML3_ActionMenu::LCDML3_ActionMenu() { begin(NULL); }
+void LCDML3_ActionMenu::begin(LCDML3_ActionFn fn) { actionFn = fn; lastAction = 255; }
+void LCDML3_ActionMenu::setAction(LCDML3_ActionFn fn) { actionFn = fn; }
+void LCDML3_ActionMenu::trigger(uint8_t id) { lastAction = id; if(actionFn != NULL) actionFn(id); }
+uint8_t LCDML3_ActionMenu::getLastAction(void) const { return lastAction; }
+
+void LCDML3_applyThemePreset(LCDML3_Theme &theme, LCDML3_ThemePreset preset)
+{
+    switch(preset)
+    {
+        case LCDML3_THEME_LCD: theme.setColors(0xFFFF, 0x0000, 0x07E0, 0xF800); theme.setSymbols(">", "[x]", "[ ]", "(o)", "( )"); break;
+        case LCDML3_THEME_OLED: theme.setColors(1, 0, 1, 1); theme.setSymbols(">", "*", "-", "@", "o"); break;
+        case LCDML3_THEME_TFT_DARK: theme.setColors(0xFFFF, 0x0000, 0x07FF, 0xF800); theme.setSymbols(">", "[x]", "[ ]", "(o)", "( )"); break;
+        case LCDML3_THEME_TFT_LIGHT: theme.setColors(0x0000, 0xFFFF, 0x001F, 0xF800); theme.setSymbols(">", "[x]", "[ ]", "(o)", "( )"); break;
+        case LCDML3_THEME_HIGH_CONTRAST: theme.setColors(0xFFFF, 0x0000, 0xFFE0, 0xF800); theme.setSymbols(">>", "YES", "NO", "ON", "OFF"); break;
+    }
+}
+
+LCDML3_SDFileMenu::LCDML3_SDFileMenu() { begin(4); }
+
+void LCDML3_SDFileMenu::begin(uint8_t visibleRows)
+{
+    rows = visibleRows == 0 ? 1 : visibleRows;
+    itemCount = 0;
+    cursor = 0;
+    selected = 255;
+    windowStart = 0;
+}
+
+void LCDML3_SDFileMenu::setItemCount(uint8_t count) { itemCount = count; if(cursor >= itemCount) cursor = itemCount == 0 ? 0 : itemCount - 1; keepVisible(); }
+void LCDML3_SDFileMenu::up(void) { if(itemCount == 0) return; cursor = cursor == 0 ? itemCount - 1 : cursor - 1; keepVisible(); }
+void LCDML3_SDFileMenu::down(void) { if(itemCount == 0) return; cursor = cursor + 1 >= itemCount ? 0 : cursor + 1; keepVisible(); }
+void LCDML3_SDFileMenu::select(uint8_t index) { if(index < itemCount) { selected = index; cursor = index; keepVisible(); } }
+uint8_t LCDML3_SDFileMenu::getCursor(void) const { return cursor; }
+uint8_t LCDML3_SDFileMenu::getSelected(void) const { return selected; }
+uint8_t LCDML3_SDFileMenu::getWindowStart(void) const { return windowStart; }
+uint8_t LCDML3_SDFileMenu::getVisibleRows(void) const { return rows; }
+
+void LCDML3_SDFileMenu::keepVisible(void)
+{
+    if(cursor < windowStart) windowStart = cursor;
+    if(cursor >= (uint8_t)(windowStart + rows)) windowStart = cursor - rows + 1;
+}
+
+LCDML3_DiagnosticMenu::LCDML3_DiagnosticMenu() { begin(); }
+void LCDML3_DiagnosticMenu::begin(void) { i2cFound = 0; wifiFound = 0; heap = 0; uptimeMs = 0; }
+void LCDML3_DiagnosticMenu::setI2CFound(uint8_t count) { i2cFound = count; }
+void LCDML3_DiagnosticMenu::setWiFiFound(uint8_t count) { wifiFound = count; }
+void LCDML3_DiagnosticMenu::setHeap(uint32_t heapBytes) { heap = heapBytes; }
+void LCDML3_DiagnosticMenu::setUptime(unsigned long uptime) { uptimeMs = uptime; }
+
+void LCDML3_DiagnosticMenu::format(char *buffer, size_t size) const
+{
+    if(buffer == NULL || size == 0) return;
+    snprintf(buffer, size, "I2C:%u WiFi:%u Heap:%lu Up:%lus", i2cFound, wifiFound, (unsigned long)heap, uptimeMs / 1000UL);
+}

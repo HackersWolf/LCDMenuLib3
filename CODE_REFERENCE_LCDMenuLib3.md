@@ -1616,3 +1616,51 @@ This keeps LCDMenuLib3 compilable on AVR boards while still supporting ESP proje
 
 For ESP32 Preferences, connect `LCDML3_SettingsAdapter` to wrapper callbacks. For WiFi and Bluetooth, use `LCDML3_WiFiMenu` and `LCDML3_BluetoothMenu` to track menu state while your sketch calls `WiFi.scanNetworks()`, `WiFi.begin()`, BLE scan APIs, or Bluetooth pairing APIs.
 
+## Extra System Widgets
+
+Additional LCDMenuLib3 helpers added after the first widget set:
+
+- `LCDML3_RotaryEncoderHelper`: converts encoder direction into accelerated steps.
+- `LCDML3_TouchMenu`: maps touchscreen coordinates to menu/action IDs.
+- `LCDML3_Sparkline`: stores 24 samples and normalizes them for graphs.
+- `LCDML3_LogViewer`: ring-buffer log viewer with INFO/WARN/ERROR filtering.
+- `LCDML3_AlarmScheduler`: stores up to 8 alarms with day masks.
+- `LCDML3_UnitSelector`: cycles through custom unit labels.
+- `LCDML3_OTAStatus`: tracks OTA/check/download/flash/done/error status.
+- `LCDML3_CalibrationWizard`: two-point calibration helper.
+- `LCDML3_ActionMenu`: calls user action callbacks by ID.
+- `LCDML3_SDFileMenu`: windowed file-list state helper.
+- `LCDML3_DiagnosticMenu`: formats I2C/WiFi/heap/uptime diagnostics.
+
+Example:
+
+```cpp
+LCDML3_RotaryEncoderHelper encoder;
+LCDML3_Sparkline graph;
+LCDML3_LogViewer logs;
+LCDML3_OTAStatus ota;
+LCDML3_DiagnosticMenu diag;
+
+void setup() {
+  Serial.begin(115200);
+  encoder.begin(1, 10, 100);
+  graph.begin(0, 1023);
+  logs.add(LCDML3_LOG_INFO, "Boot");
+  ota.setState(LCDML3_OTA_DOWNLOADING);
+}
+
+void loop() {
+  char text[48];
+  int16_t delta = encoder.update(1, millis());
+  graph.add(analogRead(A0));
+  ota.setProgress((ota.getProgress() + 1) % 101);
+  diag.setUptime(millis());
+
+  graph.format(text, sizeof(text));
+  Serial.println(text);
+  ota.format(text, sizeof(text));
+  Serial.println(text);
+  diag.format(text, sizeof(text));
+  Serial.println(text);
+}
+```
