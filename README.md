@@ -47,6 +47,7 @@ Open the examples from the Arduino IDE or compile them with `arduino-cli`.
 ## Documentation
 
 - `CODE_REFERENCE_LCDMenuLib3.md`: detailed API reference with practical examples.
+- `widgets_exemples.md`: ASCII/Markdown 128x64 screen mockups for the widget layouts.
 - `CHANGELOG.md`: release notes and feature additions.
 - `README_LCDMenuLib3.txt`: short plain-text overview for Arduino library managers or simple file browsers.
 

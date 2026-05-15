@@ -56,6 +56,7 @@ All notable LCDMenuLib3 changes are documented here.
 ### Documentation
 
 - Added detailed `CODE_REFERENCE_LCDMenuLib3.md` with original LCDMenuLib style usage plus LCDMenuLib3 helper APIs and widget examples.
+- Added `widgets_exemples.md` with ASCII/Markdown 128x64 screen mockups for widget presentation and layout planning.
 - Reworked `README.md` as a public feature presentation.
 - Added this changelog for feature history.
 - Preserved credit to Nils Feldkaemper and the original LCDMenuLib2 project.
