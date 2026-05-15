@@ -1618,21 +1618,522 @@ For ESP32 Preferences, connect `LCDML3_SettingsAdapter` to wrapper callbacks. Fo
 
 ## System and Utility Widgets
 
-LCDMenuLib3 includes these helpers for controls, diagnostics, setup flows, storage menus, graphs, logs, and action-oriented interfaces:
+These widgets are state helpers. They do not force one display driver or one hardware stack. Your sketch reads buttons, encoder steps, touch coordinates, WiFi/Bluetooth events, SD files, or sensor values, then passes those values into the widget. The widget keeps the menu state clean and gives you formatted output or selected IDs.
 
-- `LCDML3_RotaryEncoderHelper`: converts encoder direction into accelerated steps.
-- `LCDML3_TouchMenu`: maps touchscreen coordinates to menu/action IDs.
-- `LCDML3_Sparkline`: stores 24 samples and normalizes them for graphs.
-- `LCDML3_LogViewer`: ring-buffer log viewer with INFO/WARN/ERROR filtering.
-- `LCDML3_AlarmScheduler`: stores up to 8 alarms with day masks.
-- `LCDML3_UnitSelector`: cycles through custom unit labels.
-- `LCDML3_OTAStatus`: tracks OTA/check/download/flash/done/error status.
-- `LCDML3_CalibrationWizard`: two-point calibration helper.
-- `LCDML3_ActionMenu`: calls user action callbacks by ID.
-- `LCDML3_SDFileMenu`: windowed file-list state helper.
-- `LCDML3_DiagnosticMenu`: formats I2C/WiFi/heap/uptime diagnostics.
+### `LCDML3_RotaryEncoderHelper`
+
+Converts rotary encoder movement into slow or accelerated edit steps.
+
+Useful for:
+
+- Fast numeric editing.
+- Volume and brightness controls.
+- Menu cursor movement with acceleration.
+- Any value where slow turns should be precise and fast turns should jump faster.
+
+API:
+
+- `begin(slowStep, fastStep, fastThresholdMs)`: configures normal and accelerated steps.
+- `update(direction, nowMs)`: returns a signed delta. Use `direction = 1` clockwise, `-1` counter-clockwise, `0` no movement.
+- `reset()`: clears the previous timestamp and last step.
+- `getLastStep()`: returns the last absolute step used.
+
+Example with a PWM editor:
+
+```cpp
+#include <LCDMenuLib3_widgets.h>
+
+LCDML3_RotaryEncoderHelper encoder;
+LCDML3_NumericEditor pwm;
+
+void setup() {
+  encoder.begin(1, 10, 90);
+  pwm.begin(128, 0, 255, 1, false);
+}
+
+void onEncoderMove(int8_t direction) {
+  int16_t delta = encoder.update(direction, millis());
+
+  while (delta > 0) {
+    pwm.increment();
+    delta--;
+  }
+
+  while (delta < 0) {
+    pwm.decrement();
+    delta++;
+  }
+}
+```
+
+### `LCDML3_TouchMenu`
+
+Maps touchscreen coordinates to menu/action IDs.
+
+Useful for:
+
+- TFT button grids.
+- Touch shortcuts for `Back`, `OK`, `Up`, and `Down`.
+- Direct selection of menu rows.
+- Mixed LCDMenuLib3 menu navigation plus touch actions.
+
+API:
+
+- `begin(boxes, count)`: registers an array of hitboxes.
+- `hit(x, y)`: returns the hitbox ID or `-1` when no enabled hitbox matches.
+- `setEnabled(index, enabled)`: enables or disables a hitbox by array index.
+- `isEnabled(index)`: checks the enabled state.
+
+Example with four touch buttons:
+
+```cpp
+#include <LCDMenuLib3_widgets.h>
+
+enum {
+  TOUCH_UP = 1,
+  TOUCH_DOWN = 2,
+  TOUCH_OK = 3,
+  TOUCH_BACK = 4
+};
+
+LCDML3_Hitbox boxes[] = {
+  { 0,   0, 80, 40, TOUCH_UP },
+  { 0,  40, 80, 40, TOUCH_DOWN },
+  { 80,  0, 80, 40, TOUCH_OK },
+  { 80, 40, 80, 40, TOUCH_BACK }
+};
+
+LCDML3_TouchMenu touch;
+
+void setup() {
+  touch.begin(boxes, 4);
+}
+
+void handleTouch(int16_t x, int16_t y) {
+  int8_t id = touch.hit(x, y);
+
+  if (id == TOUCH_UP) LCDML.BT_up();
+  if (id == TOUCH_DOWN) LCDML.BT_down();
+  if (id == TOUCH_OK) LCDML.BT_enter();
+  if (id == TOUCH_BACK) LCDML.BT_quit();
+}
+```
+
+### `LCDML3_Sparkline`
+
+Stores up to 24 sensor samples and normalizes them for compact graph rendering.
+
+Useful for:
+
+- Temperature history.
+- Battery voltage trend.
+- RSSI or signal strength.
+- Sensor diagnostics on small displays.
+
+API:
+
+- `begin(minValue, maxValue)`: configures the expected sample range.
+- `add(value)`: appends a sample to the ring buffer.
+- `size()`: returns the number of available samples.
+- `get(index)`: returns the sample at display index.
+- `normalized(index, height)`: maps a sample to `0..height`.
+- `format(buffer, size)`: creates a compact text summary.
+
+Example for OLED drawing:
+
+```cpp
+#include <LCDMenuLib3_widgets.h>
+
+LCDML3_Sparkline tempGraph;
+
+void setup() {
+  tempGraph.begin(150, 350); // 15.0 C to 35.0 C if values are x10
+}
+
+void addTemperature(float celsius) {
+  tempGraph.add((int16_t)(celsius * 10.0f));
+}
+
+void drawGraph() {
+  for (uint8_t i = 0; i < tempGraph.size(); i++) {
+    uint8_t y = tempGraph.normalized(i, 20);
+    // display.drawPixel(i, 20 - y, WHITE);
+  }
+}
+```
+
+### `LCDML3_LogViewer`
+
+Keeps the last 12 log entries and filters them by level.
+
+Useful for:
+
+- A compact debug menu.
+- Displaying recent warnings without Serial Monitor.
+- Field diagnostics on installed devices.
+
+API:
+
+- `clear()`: removes all entries.
+- `add(level, message)`: stores a message up to 24 characters.
+- `setFilter(minLevel)`: hides lower-severity entries.
+- `getFilter()`: returns the active filter.
+- `countVisible()`: returns the number of entries matching the filter.
+- `getVisible(visibleIndex, out)`: copies one visible entry into `out`.
+
+Levels:
+
+- `LCDML3_LOG_INFO`
+- `LCDML3_LOG_WARN`
+- `LCDML3_LOG_ERROR`
 
 Example:
+
+```cpp
+#include <LCDMenuLib3_widgets.h>
+
+LCDML3_LogViewer logs;
+
+void setup() {
+  logs.add(LCDML3_LOG_INFO, "Boot");
+  logs.add(LCDML3_LOG_WARN, "WiFi weak");
+  logs.add(LCDML3_LOG_ERROR, "Sensor fail");
+}
+
+void showErrorsOnly() {
+  logs.setFilter(LCDML3_LOG_ERROR);
+
+  for (uint8_t i = 0; i < logs.countVisible(); i++) {
+    LCDML3_LogEntry entry;
+
+    if (logs.getVisible(i, entry)) {
+      Serial.println(entry.message);
+    }
+  }
+}
+```
+
+### `LCDML3_AlarmScheduler`
+
+Stores up to 8 enabled/disabled alarms with hour, minute, and day mask.
+
+Useful for:
+
+- Irrigation schedules.
+- Heater or pump start times.
+- Feeding, lighting, dosing, or reminder menus.
+- Weekly automation on RTC-based projects.
+
+API:
+
+- `begin()`: resets all alarms.
+- `set(index, hour, minute, daysMask, enabled)`: stores one alarm.
+- `get(index)`: returns an `LCDML3_Alarm`.
+- `matches(index, hour, minute, dayBit)`: checks if an alarm should fire.
+- `count()`: returns the fixed alarm capacity, currently 8.
+
+Day mask convention is sketch-defined. A common pattern is one bit per day:
+
+```cpp
+const uint8_t DAY_MON = 0x01;
+const uint8_t DAY_TUE = 0x02;
+const uint8_t DAY_WED = 0x04;
+const uint8_t DAY_THU = 0x08;
+const uint8_t DAY_FRI = 0x10;
+const uint8_t DAY_SAT = 0x20;
+const uint8_t DAY_SUN = 0x40;
+```
+
+Example:
+
+```cpp
+#include <LCDMenuLib3_widgets.h>
+
+LCDML3_AlarmScheduler alarms;
+
+void setup() {
+  alarms.begin();
+  alarms.set(0, 7, 30, DAY_MON | DAY_TUE | DAY_WED | DAY_THU | DAY_FRI, true);
+}
+
+void checkAlarm(uint8_t hour, uint8_t minute, uint8_t todayBit) {
+  if (alarms.matches(0, hour, minute, todayBit)) {
+    Serial.println(F("Alarm 0 active"));
+  }
+}
+```
+
+### `LCDML3_UnitSelector`
+
+Cycles through a user-provided list of unit labels.
+
+Useful for:
+
+- Celsius/Fahrenheit menus.
+- Metric/imperial configuration.
+- Pressure units, speed units, distance units, or custom display units.
+
+API:
+
+- `begin(units, count, selected)`: registers unit labels.
+- `next()`: selects the next unit.
+- `previous()`: selects the previous unit.
+- `getSelected()`: returns the selected index.
+- `getLabel()`: returns the selected text label.
+
+Example:
+
+```cpp
+#include <LCDMenuLib3_widgets.h>
+
+const char *temperatureUnits[] = { "C", "F", "K" };
+LCDML3_UnitSelector units;
+
+void setup() {
+  units.begin(temperatureUnits, 3, 0);
+}
+
+void loop() {
+  if (Serial.read() == 'u') {
+    units.next();
+    Serial.println(units.getLabel());
+  }
+}
+```
+
+### `LCDML3_OTAStatus`
+
+Tracks firmware update state and progress.
+
+Useful for:
+
+- ESP32/ESP8266 OTA menus.
+- Update progress screens.
+- Reporting errors while the actual OTA stack stays in the sketch.
+
+API:
+
+- `begin()`: resets state to idle and progress to 0.
+- `setState(state)`: sets the OTA state.
+- `getState()`: reads the state.
+- `setProgress(percent)`: stores progress from 0 to 100.
+- `getProgress()`: reads progress.
+- `format(buffer, size)`: formats a display line.
+
+States:
+
+- `LCDML3_OTA_IDLE`
+- `LCDML3_OTA_CHECKING`
+- `LCDML3_OTA_DOWNLOADING`
+- `LCDML3_OTA_FLASHING`
+- `LCDML3_OTA_DONE`
+- `LCDML3_OTA_ERROR`
+
+Example:
+
+```cpp
+#include <LCDMenuLib3_widgets.h>
+
+LCDML3_OTAStatus ota;
+
+void setup() {
+  ota.begin();
+}
+
+void onOtaDownload(uint8_t percent) {
+  char line[24];
+
+  ota.setState(LCDML3_OTA_DOWNLOADING);
+  ota.setProgress(percent);
+  ota.format(line, sizeof(line));
+  Serial.println(line);
+}
+```
+
+### `LCDML3_CalibrationWizard`
+
+Captures raw/reference calibration points and applies linear correction.
+
+Useful for:
+
+- Two-point sensor calibration.
+- ADC scaling.
+- Probe calibration.
+- Load cell or pressure sensor setup menus.
+
+API:
+
+- `begin(points)`: configures the number of calibration points, up to 4.
+- `captureRaw(point, raw, reference)`: stores one raw/reference pair.
+- `apply(raw)`: returns corrected value.
+- `reset()`: clears captured points.
+- `isReady()`: true when all configured points were captured.
+
+Example with two points:
+
+```cpp
+#include <LCDMenuLib3_widgets.h>
+
+LCDML3_CalibrationWizard calibration;
+
+void setup() {
+  calibration.begin(2);
+  calibration.captureRaw(0, 100, 0);
+  calibration.captureRaw(1, 900, 1000);
+}
+
+void loop() {
+  if (calibration.isReady()) {
+    int32_t corrected = calibration.apply(512);
+    Serial.println(corrected);
+  }
+}
+```
+
+### `LCDML3_ActionMenu`
+
+Dispatches menu action IDs to a callback.
+
+Useful for:
+
+- GPIO actions.
+- MQTT publishes.
+- HTTP requests.
+- Serial commands.
+- Any menu item that should trigger a command instead of editing a value.
+
+API:
+
+- `begin(actionFn)`: registers an optional action callback.
+- `setAction(actionFn)`: changes the callback.
+- `trigger(id)`: stores the ID and calls the callback.
+- `getLastAction()`: returns the last triggered ID.
+
+Example:
+
+```cpp
+#include <LCDMenuLib3_widgets.h>
+
+LCDML3_ActionMenu actions;
+
+void runAction(uint8_t id) {
+  if (id == 1) digitalWrite(13, HIGH);
+  if (id == 2) digitalWrite(13, LOW);
+  if (id == 3) Serial.println(F("MQTT publish requested"));
+}
+
+void setup() {
+  pinMode(13, OUTPUT);
+  actions.begin(runAction);
+}
+
+void onMenuEnter(uint8_t actionId) {
+  actions.trigger(actionId);
+}
+```
+
+### `LCDML3_SDFileMenu`
+
+Keeps cursor, selected item, visible rows, and window start for a file list.
+
+Useful for:
+
+- SD card browsers.
+- Choosing config files.
+- Selecting log files.
+- Browsing filenames collected by the sketch.
+
+API:
+
+- `begin(visibleRows)`: initializes the list.
+- `setItemCount(count)`: sets how many files are available.
+- `up()` / `down()`: moves the cursor.
+- `select(index)`: selects one file index.
+- `getCursor()`: returns the cursor index.
+- `getSelected()`: returns the selected index.
+- `getWindowStart()`: returns the first visible row index.
+- `getVisibleRows()`: returns the window height.
+
+Example:
+
+```cpp
+#include <LCDMenuLib3_widgets.h>
+
+const char *files[] = {
+  "config.txt",
+  "log001.csv",
+  "log002.csv",
+  "backup.bin",
+  "readme.txt"
+};
+
+LCDML3_SDFileMenu fileMenu;
+
+void setup() {
+  fileMenu.begin(3);
+  fileMenu.setItemCount(5);
+}
+
+void printVisibleFiles() {
+  uint8_t start = fileMenu.getWindowStart();
+  uint8_t rows = fileMenu.getVisibleRows();
+
+  for (uint8_t row = 0; row < rows; row++) {
+    uint8_t index = start + row;
+    if (index >= 5) break;
+
+    Serial.print(index == fileMenu.getCursor() ? F("> ") : F("  "));
+    Serial.println(files[index]);
+  }
+}
+```
+
+### `LCDML3_DiagnosticMenu`
+
+Formats common system diagnostics into a compact display line.
+
+Useful for:
+
+- Service menus.
+- Factory tests.
+- Installer diagnostics.
+- ESP health screens.
+
+API:
+
+- `begin()`: resets all diagnostic values.
+- `setI2CFound(count)`: stores the number of I2C devices found.
+- `setWiFiFound(count)`: stores the number of WiFi networks found.
+- `setHeap(heap)`: stores free heap bytes.
+- `setUptime(uptimeMs)`: stores uptime in milliseconds.
+- `format(buffer, size)`: formats the diagnostic summary.
+
+Example:
+
+```cpp
+#include <LCDMenuLib3_widgets.h>
+
+LCDML3_DiagnosticMenu diag;
+
+void setup() {
+  diag.begin();
+}
+
+void loop() {
+  char line[48];
+
+  diag.setI2CFound(3);
+  diag.setWiFiFound(7);
+  diag.setHeap(42120);
+  diag.setUptime(millis());
+  diag.format(line, sizeof(line));
+
+  Serial.println(line);
+  delay(1000);
+}
+```
+
+## Combined System Widget Example
 
 ```cpp
 LCDML3_RotaryEncoderHelper encoder;
@@ -1662,5 +2163,168 @@ void loop() {
   Serial.println(text);
   diag.format(text, sizeof(text));
   Serial.println(text);
+}
+```
+
+## Advanced Widget Integration Patterns
+
+### Numeric editor for temperature, PWM, brightness, volume, and setpoints
+
+```cpp
+LCDML3_NumericEditor temperature;
+LCDML3_NumericEditor pwm;
+LCDML3_NumericEditor volume;
+
+void setup() {
+  temperature.begin(21, 5, 35, 1, false);
+  pwm.begin(128, 0, 255, 5, false);
+  volume.begin(30, 0, 100, 2, true);
+}
+
+void printEditors() {
+  char line[20];
+
+  temperature.format(line, sizeof(line), " C");
+  Serial.println(line);
+
+  pwm.format(line, sizeof(line), " PWM");
+  Serial.println(line);
+
+  volume.format(line, sizeof(line), " %");
+  Serial.println(line);
+}
+```
+
+### Float editor for calibration and PID
+
+```cpp
+LCDML3_FloatEditor kp;
+LCDML3_FloatEditor calibrationFactor;
+
+void setup() {
+  kp.begin(1.25f, 0.0f, 20.0f, 0.05f, 2, false);
+  calibrationFactor.begin(1.000f, 0.500f, 1.500f, 0.001f, 3, false);
+}
+
+void tunePid(bool increase) {
+  if (increase) {
+    kp.increment();
+  } else {
+    kp.decrement();
+  }
+}
+```
+
+### IP address and WiFi credentials
+
+```cpp
+LCDML3_IPAddressEditor ip;
+LCDML3_WiFiMenu wifi;
+LCDML3_TextEditor ssid;
+LCDML3_TextEditor password;
+
+char ssidText[33] = "Workshop";
+char passText[65] = "secret";
+
+void setup() {
+  ip.begin(192, 168, 1, 42);
+  wifi.setCredentials(ssidText, passText);
+  wifi.setState(LCDML3_NET_IDLE);
+  ssid.begin(ssidText, sizeof(ssidText));
+  password.begin(passText, sizeof(passText), NULL, true);
+}
+```
+
+### Bluetooth discover/search/BLE/pair/disconnect menu
+
+```cpp
+LCDML3_BluetoothMenu bluetooth;
+
+void setup() {
+  bluetooth.setState(LCDML3_BT_DISCOVER);
+  bluetooth.setBleMode(true);
+  bluetooth.setSelectedDevice(0);
+}
+
+void showBluetooth() {
+  char line[32];
+  bluetooth.formatStatus(line, sizeof(line));
+  Serial.println(line);
+}
+```
+
+### Header, theme, status bar, and icons
+
+```cpp
+LCDML3_MenuHeader header;
+LCDML3_Theme theme;
+LCDML3_StatusBar status;
+
+void setup() {
+  header.begin("Network", "Setup", 1);
+  LCDML3_applyThemePreset(theme, LCDML3_THEME_OLED);
+  status.setIcon(LCDML3_ICON_WIFI, true);
+  status.setIcon(LCDML3_ICON_BT, false);
+  status.setIcon(LCDML3_ICON_WARN, true);
+}
+```
+
+### Confirm dialog, PIN editor, and progress screen
+
+```cpp
+LCDML3_ConfirmDialog confirm;
+LCDML3_PinEditor pin;
+LCDML3_ProgressScreen progress;
+
+void setup() {
+  confirm.begin(false);
+  pin.begin(4);
+  progress.begin(100);
+}
+
+void startProtectedAction() {
+  confirm.confirm();
+
+  if (confirm.getResult() == LCDML3_CONFIRM_OK && pin.equals("1234")) {
+    progress.set(0);
+  }
+}
+```
+
+### Wizard flow helper
+
+```cpp
+LCDML3_Wizard setupWizard;
+
+void setup() {
+  setupWizard.begin(4);
+}
+
+void handleWizard(bool nextPressed, bool backPressed) {
+  if (nextPressed && !setupWizard.isLast()) setupWizard.next();
+  if (backPressed && setupWizard.getStep() > 0) setupWizard.previous();
+}
+```
+
+### Persistent settings adapter
+
+`LCDML3_SettingsAdapter` is storage-neutral. Connect it to EEPROM, ESP32 Preferences, SD card records, FRAM, or any other byte-addressable backend.
+
+```cpp
+LCDML3_SettingsAdapter settings;
+uint8_t memory[32];
+
+uint8_t readSetting(uint16_t address) {
+  return memory[address];
+}
+
+void writeSetting(uint16_t address, uint8_t value) {
+  memory[address] = value;
+}
+
+void setup() {
+  settings.begin(readSetting, writeSetting);
+  settings.writeInt32(0, 2300);
+  settings.writeFloat(4, 1.25f);
 }
 ```
